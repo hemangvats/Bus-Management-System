@@ -21,11 +21,8 @@ A comprehensive desktop application designed to streamline bus booking and fleet
 
 ## 🗂️ Repository Structure
 
-*   `main.py`: The core application file containing both the frontend GUI logic and backend data handling.
-*   `Bustypedata.csv` : Backend storage for available bus types and pricing.
-*   `locationdata.csv` : Backend storage for route destinations and pricing.
-*   `userdata.csv` : Credentials and information for registered users.
-*   `bookingrecords.csv` : Persistent records of all customer transactions.
+*   `main.py`: The core application file containing the GUI logic and application flow.
+*   `database.py`: Centralized MySQL database handler and initialization logic.
 *   `trial.png`: Background UI image resource.
 
 ## ⚙️ How to Run Locally
