@@ -1,6 +1,6 @@
 # Velocity Bus Booking (VBB) Management System 🚌
 
-A full-stack desktop application designed for efficient bus fleet management and passenger bookings. This system leverages a robust **MySQL Relational Database** to ensure high data integrity, secure user authentication, and real-time management of travel resources.
+A full-stack desktop application built with **Python** and **Tkinter**, designed for efficient bus fleet management and passenger bookings. This system leverages a robust **MySQL Relational Database** to ensure high data integrity, secure user authentication, and real-time management of travel resources.
 
 ---
 
