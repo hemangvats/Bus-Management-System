@@ -16,8 +16,8 @@ A comprehensive desktop application designed to streamline bus booking and fleet
 
 *   **Programming Language:** Python 3.x
 *   **GUI Framework:** Tkinter
-*   **Database:** Local CSV File System (Data Structures)
-*   **External Dependencies:** None (Relies entirely on standard Python libraries)
+*   **Database:** MySQL (Relational Database Management System)
+*   **External Dependencies:** `mysql-connector-python`
 
 ## 🗂️ Repository Structure
 
@@ -32,13 +32,21 @@ A comprehensive desktop application designed to streamline bus booking and fleet
 
 Since this program uses only built-in standard Python libraries, there are no extra packages to download.
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/hemangvats/Bus-Management-System.git
-    cd Bus-Management-System
-    ```
-2.  Ensure that all CSV files and `trial.png` are properly situated in the exact same directory.
-3.  Run the application using Python:
+1.  **Clone the repository.**
+2.  **Environment Setup:**
+    *   Install the MySQL connector:
+        ```bash
+        pip install mysql-connector-python
+        ```
+    *   Ensure a MySQL server is running (e.g., MySQL Community Server or via XAMPP).
+3.  **Database Configuration:**
+    *   Edit `database.py` with your MySQL credentials (host, user, password).
+4.  **Migration & Setup:**
+    *   Run the migration script to create the database and transfer data from CSV:
+        ```bash
+        python migrate_to_sql.py
+        ```
+5.  **Run the application:**
     ```bash
     python main.py
     ```

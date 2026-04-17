@@ -9,6 +9,10 @@ import os
 import csv
 from tkinter import *
 from tkinter import messagebox
+from database import DatabaseHandler
+
+# Initialize Database Handler
+db = DatabaseHandler()
 
 #MainBookingPageData
 
@@ -17,118 +21,119 @@ def MainBookingPage():
     root.title('VBB Booking')
     root.geometry("800x500")
 
-    F = open("userdata.csv", "r")
-    read = list(csv.reader(F))
-
-    F1 = open("locationdata.csv", "r")
-    rdr = list(csv.reader(F1))
-
-    F2 = open("Bustypedata.csv", "r")
-    ddr = list(csv.reader(F2))
-
-    for i in read:
-        if w == i[3]:
-            welcome_label = Label(root, text=f"Welcome {i[0]} {i[1]}", font=("Helvetica", 30, "bold", "italic"), fg="#ffc800", bg="#000000")
-            welcome_label.pack(pady=15)
-            
-            #varaibles
-            x = 0
-            z = 0
-            id = i[3]
+    # Fetch User Info
+    user_info = db.fetch_one("SELECT firstname, lastname FROM users WHERE username = %s", (w,))
+    
+    if user_info:
+        welcome_label = Label(root, text=f"Welcome {user_info[0]} {user_info[1]}", font=("Helvetica", 30, "bold", "italic"), fg="#ffc800", bg="#000000")
+        welcome_label.pack(pady=15)
         
-            for i in rdr:
-                loc_label = Label(root, text=f"Location - {i[0]} : Price {i[1]} Choice Number: {x}")
-                loc_label.pack()
-                x += 1
+        #variables
+        x = 0
+        z = 0
+        id = w # From global w
+    
+        rdr = db.fetch_all("SELECT name, price FROM locations")
+        for i in rdr:
+            loc_label = Label(root, text=f"Location - {i[0]} : Price {i[1]} Choice Number: {x}")
+            loc_label.pack()
+            x += 1
 
-            locbookinglabel = Label(root, text="Enter any one choice number: ")
-            locbookinglabel.pack()
-            bookingchoice = Entry(root)
-            bookingchoice.pack(pady=10)
-            
-            for y in ddr:
-                bt_label = Label(root, text=f"Bus Type = {y[0]} : Price  = {y[1]} : Choice Number: {z} ")
-                bt_label.pack()
-                z += 1
+        locbookinglabel = Label(root, text="Enter any one choice number: ")
+        locbookinglabel.pack()
+        bookingchoice = Entry(root)
+        bookingchoice.pack(pady=10)
+        
+        ddr = db.fetch_all("SELECT name, price FROM bus_types")
+        for y in ddr:
+            bt_label = Label(root, text=f"Bus Type = {y[0]} : Price  = {y[1]} : Choice Number: {z} ")
+            bt_label.pack()
+            z += 1
 
-            btannounce = Label(root, text="Enter any one choice number")
-            btannounce.pack()
-            bt_entry = Entry(root)
-            bt_entry.pack(pady=10)
+        btannounce = Label(root, text="Enter any one choice number")
+        btannounce.pack()
+        bt_entry = Entry(root)
+        bt_entry.pack(pady=10)
 
-            travelnum = Label(root, text="Number of people travelling (In Numbericals)" )
-            travelnum.pack()
-            travelnumEntry = Entry(root)
-            travelnumEntry.pack(pady=10)
+        travelnum = Label(root, text="Number of people travelling (In Numbericals)" )
+        travelnum.pack()
+        travelnumEntry = Entry(root)
+        travelnumEntry.pack(pady=10)
 
-            def BillWindow():
-                bw = Tk()
-                bw.title('Billing Window')
-                bw.geometry("800x500")
+        def BillWindow():
+            bw = Tk()
+            bw.title('Billing Window')
+            bw.geometry("800x500")
 
-                #backend calculation
+            #backend calculation
+            try:
                 awc = bookingchoice.get()
                 _cAWC = int(awc)
-                rdrcwc = (rdr[_cAWC])
+                rdrcwc = rdr[_cAWC]
                 rrdrcwc = rdrcwc[0]
+                
                 bwc = bt_entry.get()
                 _bWC = int(bwc)
-                ddrbwc = (ddr[_bWC])
+                ddrbwc = ddr[_bWC]
                 dddrbwc = ddrbwc[0]
+                
                 cwc = travelnumEntry.get()
                 _cCWC = int(cwc)
-                tolSum = ((int(rdrcwc[1]))+(int(ddrbwc[1])))*(_cCWC)
+                
+                tolSum = (int(rdrcwc[1]) + int(ddrbwc[1])) * _cCWC
                 strtolSum = str(tolSum)
 
-                #backend of adding list to booking records
-                oP = open("bookingrecords.csv", 'a', newline='')
-                wrt = csv.writer(oP)
-                bookingList = [id, rrdrcwc, dddrbwc, cwc, strtolSum]
-                wrt.writerow(bookingList)
+                # Adding record to database
+                db.execute_query(
+                    "INSERT INTO bookings (username, location, bus_type, num_passengers, total_fare) VALUES (%s, %s, %s, %s, %s)",
+                    (id, rrdrcwc, dddrbwc, _cCWC, tolSum)
+                )
+            except (ValueError, IndexError):
+                messagebox.showerror("Selection Error", "Please ensure all fields are filled correctly.")
+                bw.destroy()
+                return
 
-                #displaying final choices. 
-                ChoiceLabel1 = Label(bw, text="Your choice is as follows: \n")
-                ChoiceLabel1.pack()
-                bwLocationLabel = Label(bw, text=f"Location: {rdrcwc[0]}")
-                bwLocationLabel.pack()
-                bwBt = Label(bw, text=f"Bus Choice:  {ddrbwc[0]}")
-                bwBt.pack()
-                no_ofPeople_travelling = Label(bw, text=f"Number of people travelling {_cCWC}")
-                no_ofPeople_travelling.pack()
-                bwPriceLabel = Label(bw, text=f"Total Price: {tolSum}")
-                bwPriceLabel.pack()
-            
-            def records():
-                j = open("bookingrecords.csv", 'r')
-                jej = csv.reader(j)
-                rt = Tk()
-                rt.title('Previous Records')
-                for i in jej: 
-                    if w == i[0]:
+            #displaying final choices. 
+            ChoiceLabel1 = Label(bw, text="Your choice is as follows: \n")
+            ChoiceLabel1.pack()
+            bwLocationLabel = Label(bw, text=f"Location: {rdrcwc[0]}")
+            bwLocationLabel.pack()
+            bwBt = Label(bw, text=f"Bus Choice:  {ddrbwc[0]}")
+            bwBt.pack()
+            no_ofPeople_travelling = Label(bw, text=f"Number of people travelling {_cCWC}")
+            no_ofPeople_travelling.pack()
+            bwPriceLabel = Label(bw, text=f"Total Price: {tolSum}")
+            bwPriceLabel.pack()
         
-                        record_frame = Frame(rt, highlightbackground="#FFF9A6")
-                        record_frame.pack(padx = 20, pady= 20)
+        def records():
+            jej = db.fetch_all("SELECT username, location, bus_type, num_passengers, total_fare FROM bookings WHERE username = %s", (w,))
+            rt = Tk()
+            rt.title('Previous Records')
+            for i in jej: 
+    
+                    record_frame = Frame(rt, highlightbackground="#FFF9A6")
+                    record_frame.pack(padx = 20, pady= 20)
 
-                        idlabel = Label(record_frame, text=f"Username : {i[0]}")
-                        idlabel.pack(pady=5) 
+                    idlabel = Label(record_frame, text=f"Username : {i[0]}")
+                    idlabel.pack(pady=5) 
 
-                        reclocation = Label(record_frame, text=f"Destination : {i[1]}")
-                        reclocation.pack(pady=5)
+                    reclocation = Label(record_frame, text=f"Destination : {i[1]}")
+                    reclocation.pack(pady=5)
 
-                        recbuschoice = Label(record_frame, text=f"Bus Type: {i[2]}")
-                        recbuschoice.pack(pady=5)
+                    recbuschoice = Label(record_frame, text=f"Bus Type: {i[2]}")
+                    recbuschoice.pack(pady=5)
 
-                        recTotalpass = Label(record_frame, text=f"Passengers Travelled : {i[3]}")
-                        recTotalpass.pack(pady=5)
+                    recTotalpass = Label(record_frame, text=f"Passengers Travelled : {i[3]}")
+                    recTotalpass.pack(pady=5)
 
-                        recTotalmoni = Label(record_frame, text=f"Total Fare : {i[4]}")
-                        recTotalmoni.pack(pady=5)
+                    recTotalmoni = Label(record_frame, text=f"Total Fare : {i[4]}")
+                    recTotalmoni.pack(pady=5)
 
-            confirmButton = Button(root, text="Confirm and Proceed", command=BillWindow)
-            confirmButton.pack()
+        confirmButton = Button(root, text="Confirm and Proceed", command=BillWindow)
+        confirmButton.pack()
 
-            previousBookings = Button(root, text="Previous Bookings", command=records)
-            previousBookings.pack()
+        previousBookings = Button(root, text="Previous Bookings", command=records)
+        previousBookings.pack()
 
 def adminSelectionPage():
     add = Tk()
@@ -155,11 +160,12 @@ def adminSelectionPage():
             addpriceEntry.grid(row=1, column=1)    
 
             def finalAddconfirmation():
-                F = open("locationdata.csv", "a", newline='')
-                write = csv.writer(F)
-                L = [addLocationEntry.get(), addpriceEntry.get()]
-                write.writerow(L)
-                F.close()
+                db.execute_query(
+                    "INSERT INTO locations (name, price) VALUES (%s, %s) ON DUPLICATE KEY UPDATE price = %s",
+                    (addLocationEntry.get(), addpriceEntry.get(), addpriceEntry.get())
+                )
+                messagebox.showinfo("Success", "Location added successfully")
+                loc.destroy()
 
             finalAddButton = Button(loc, text="Add", command=finalAddconfirmation)
             finalAddButton.grid(row=2, column=1)
@@ -185,11 +191,12 @@ def adminSelectionPage():
             addpriceEntry.grid(row=1, column=1)    
 
             def finaladdition():
-                F = open("Bustypedata.csv", "a", newline='')
-                write = csv.writer(F)
-                L = [addBustypeEntry.get(), addpriceEntry.get()]
-                write.writerow(L)
-                F.close()
+                db.execute_query(
+                    "INSERT INTO bus_types (name, price) VALUES (%s, %s) ON DUPLICATE KEY UPDATE price = %s",
+                    (addBustypeEntry.get(), addpriceEntry.get(), addpriceEntry.get())
+                )
+                messagebox.showinfo("Success", "Bus Type added successfully")
+                bus.destroy()
                 
             finalAddButton = Button(bus, text="Add", command=finaladdition)
             finalAddButton.grid(row=2, column=1)
@@ -204,57 +211,49 @@ def adminSelectionPage():
             modloc = Tk()
             modloc.title('Modify Location')
 
-            G = open("locationdata.csv", "r")
-            read = csv.reader(G)
+            G = db.fetch_all("SELECT name, price FROM locations")
 
-            for z in read:
+            for z in G:
                 locationLabel = Label(modloc, text=f"Location {z[0]} Price {z[1]}")
                 locationLabel.pack()
             
-            modLocationLabel = Label(modloc, text="Which one do you wish to edit.")
-            modLocationLabel.pack()
-            modLocation = Entry(modloc)
-            modLocation.pack()
-            G.close()
+            modLocation_entry = Entry(modloc)
+            modLocation_entry.pack()
             
             def finalLocationEdit():
                 newLoc = Tk()
                 newLoc.title('Edit Location')
-                F = open("locationdata.csv", 'r+')
-                F1 = open("temp.csv", "w", newline='')
-                re = csv.reader(F)
-                wr = csv.writer(F1)
+                
+                current_loc = modLocation_entry.get()
+                loc_data = db.fetch_one("SELECT name, price FROM locations WHERE name = %s", (current_loc,))
+                
+                if loc_data:
+                    newLocationLabel = Label(newLoc, text="Enter new Location")
+                    newLocationLabel.grid(row=0, column=0)
+                    newLocationEntry = Entry(newLoc)
+                    newLocationEntry.insert(0, loc_data[0])
+                    newLocationEntry.grid(row=0, column=1)
+                    newLocationPrice = Label(newLoc, text="Enter new price ")
+                    newLocationPrice.grid(row=1, column=0)
+                    newLocationpriceEntry = Entry(newLoc)
+                    newLocationpriceEntry.insert(0, str(loc_data[1]))
+                    newLocationpriceEntry.grid(row=1, column=1)
 
-                for x in re:
-                    if x[0] == modLocation.get():
-                        newLocationLabel = Label(newLoc, text="Enter new Location")
-                        newLocationLabel.grid(row=0, column=0)
-                        newLocationEntry = Entry(newLoc)
-                        newLocationEntry.grid(row=0, column=1)
-                        newLocationPrice = Label(newLoc, text="Enter new price ")
-                        newLocationPrice.grid(row=1, column=0)
-                        newLocationpriceEntry = Entry(newLoc)
-                        newLocationpriceEntry.grid(row=1, column=1)
+                    def locationBackendFinal():
+                        db.execute_query(
+                            "UPDATE locations SET name = %s, price = %s WHERE name = %s",
+                            (newLocationEntry.get(), newLocationpriceEntry.get(), current_loc)
+                        )
+                        messagebox.showinfo("Edited", "The modification is successful")
+                        modloc.destroy()
+                        newLoc.destroy()
+                        mod.destroy()
 
-                        def locationBackendFinal():
-                            x[0] = newLocationEntry.get()
-                            x[1] = newLocationpriceEntry.get()
-                            wr.writerow(x)
-                            messagebox.showinfo("Edited", "The modification is successful")
-                            modloc.destroy()
-                            newLoc.destroy()
-                            mod.destroy()
-                            F.close()
-                            F1.close()
-                            os.remove("locationdata.csv")
-                            os.rename("temp.csv", "locationdata.csv")        
-
-                        finalMod = Button(newLoc, text="Confirm Edit", command=locationBackendFinal)
-                        finalMod.grid(row=2, column=1)
-
-                    else:
-                        wr.writerow(x)
-                        continue           
+                    finalMod = Button(newLoc, text="Confirm Edit", command=locationBackendFinal)
+                    finalMod.grid(row=2, column=1)
+                else:
+                    messagebox.showerror("Error", "Location not found")
+                    newLoc.destroy()
                         
             modlocButton = Button(modloc, text="Edit", command=finalLocationEdit)
             modlocButton.pack()
@@ -262,56 +261,54 @@ def adminSelectionPage():
             modbt = Tk()
             modbt.title('Modify Location')
 
-            G = open("locationdata.csv", "r")
-            read = csv.reader(G)
+            modbt_window = Tk()
+            modbt_window.title('Modify Bus Type')
 
-            for z in read:
-                locationLabel = Label(modbt, text=f"Location {z[0]} Price {z[1]}")
-                locationLabel.pack()
+            G = db.fetch_all("SELECT name, price FROM bus_types")
+            for z in G:
+                bus_type_label = Label(modbt_window, text=f"Bus Type {z[0]} Price {z[1]}")
+                bus_type_label.pack()
             
-            modbtLabel = Label(modbt, text="Which one do you wish to edit.")
+            modbtLabel = Label(modbt_window, text="Which one do you wish to edit.")
             modbtLabel.pack()
-            modbt = Entry(modbt)
-            modbt.pack()
-            G.close()
+            modbt_entry = Entry(modbt_window)
+            modbt_entry.pack()
+            
             def finalbusEdit():
                 newBus = Tk()
                 newBus.title('Edit Bus Type')
-                H = open("Bustypedata.csv", 'r+')
-                H1 = open("temp.csv", "w", newline='')
-                re = csv.reader(H)
-                wr = csv.writer(H1)
+                
+                current_bus = modbt_entry.get()
+                bus_data = db.fetch_one("SELECT name, price FROM bus_types WHERE name = %s", (current_bus,))
+                
+                if bus_data:
+                    newBusationLabel = Label(newBus, text="Enter new Bus Type")
+                    newBusationLabel.grid(row=0, column=0)
+                    newBusationEntry = Entry(newBus)
+                    newBusationEntry.insert(0, bus_data[0])
+                    newBusationEntry.grid(row=0, column=1)
+                    newBusationPrice = Label(newBus, text="Enter new price ")
+                    newBusationPrice.grid(row=1, column=0)
+                    newBusationpriceEntry = Entry(newBus)
+                    newBusationpriceEntry.insert(0, str(bus_data[1]))
+                    newBusationpriceEntry.grid(row=1, column=1)
 
-                for op in re:
-                    if op[0] == modbt.get():
-                        newBusationLabel = Label(newBus, text="Enter new Bus Type")
-                        newBusationLabel.grid(row=0, column=0)
-                        newBusationEntry = Entry(newBus)
-                        newBusationEntry.grid(row=0, column=1)
-                        newBusationPrice = Label(newBus, text="Enter new price ")
-                        newBusationPrice.grid(row=1, column=0)
-                        newBusationpriceEntry = Entry(newBus)
-                        newBusationpriceEntry.grid(row=1, column=1)
+                    def busBackendFinal():
+                        db.execute_query(
+                            "UPDATE bus_types SET name = %s, price = %s WHERE name = %s",
+                            (newBusationEntry.get(), newBusationpriceEntry.get(), current_bus)
+                        )
+                        messagebox.showinfo("Edited", "The modification is successful")
+                        modbt_window.destroy()
+                        newBus.destroy()
 
-                        def busBackendFinal():
-                            op[0] = newBusationEntry.get()
-                            op[1] = newBusationpriceEntry.get()
-                            wr.writerow(op)
-                            messagebox.showinfo("Edited", "The modification is successful")
-                            modbt.destroy()
-                            newBus.destroy()
-                            H.close()
-                            H1.close()
-                            os.remove("Bustypedata.csv")
-                            os.rename("temp.csv", "Bustypedata.csv")        
-                        finalMod = Button(newBus, text="Confirm Edit", command=busBackendFinal)
-                        finalMod.grid(row=2, column=1)
-
-                    else:
-                        wr.writerow(op)
-                        continue           
+                    finalMod = Button(newBus, text="Confirm Edit", command=busBackendFinal)
+                    finalMod.grid(row=2, column=1)
+                else:
+                    messagebox.showerror("Error", "Bus Type not found")
+                    newBus.destroy()
                         
-            modbusButton = Button(modbt, text="Edit", command=finalbusEdit)
+            modbusButton = Button(modbt_window, text="Edit", command=finalbusEdit)
             modbusButton.pack()
 
         mod = Tk()
@@ -328,41 +325,24 @@ def adminSelectionPage():
         def locationdeletion():
             delloc=Tk()
             delloc.title('Delete Location')
-            G = open("locationdata.csv", "r")
-            read = csv.reader(G)
+            G = db.fetch_all("SELECT name, price FROM locations")
 
-            for z in read:
+            for z in G:
                 locationLabel = Label(delloc, text=f"Location {z[0]} Price {z[1]}")
                 locationLabel.pack()
             delLocationLabel = Label(delloc, text="Which one do you wish to delete.")
             delLocationLabel.pack()
             delLocation = Entry(delloc)
             delLocation.pack()
-            G.close()
             def finalLocationdelete():
-                newLoc = Tk()
-                newLoc.title('Delete Location')
-                F = open("locationdata.csv", 'r+')
-                F1 = open("temp.csv", "w", newline='')
-                re = csv.reader(F)
-                wr = csv.writer(F1)
+                current_loc = delLocation.get()
+                if db.execute_query("DELETE FROM locations WHERE name = %s", (current_loc,)):
+                    messagebox.showinfo("Deleted", "The deletion is successful")
+                    delloc.destroy()
+                    dell.destroy()
+                else:
+                    messagebox.showerror("Error", "Location not found or deletion failed")
 
-                for x in re:
-                    if x[0] == delLocation.get():
-                        def locationBackendFinal():
-                            messagebox.showinfo("Deleted", "The deletion is successful")
-                            delloc.destroy()
-                            newLoc.destroy()
-                            dell.destroy()
-                            F.close()
-                            F1.close()
-                            os.remove("locationdata.csv")
-                            os.rename("temp.csv", "locationdata.csv")
-                        finalDel = Button(newLoc, text="Confirm Delete", command=locationBackendFinal)
-                        finalDel.grid(row=2, column=1)
-                        continue
-                    else:
-                        wr.writerow(x)
             dellocButton = Button(delloc, text="Delete", command=finalLocationdelete)
             dellocButton.pack()
 
@@ -370,10 +350,9 @@ def adminSelectionPage():
         def busdeletion():
             delbus=Tk()
             delbus.title('Delete Bus Type')
-            G = open("Bustypedata.csv", "r")
-            read = csv.reader(G)
+            G = db.fetch_all("SELECT name, price FROM bus_types")
 
-            for z in read:
+            for z in G:
                 busLabel = Label(delbus, text=f"Bustype {z[0]} Price {z[1]}")
                 busLabel.pack()
 
@@ -381,34 +360,18 @@ def adminSelectionPage():
             delBusLabel.pack()
             delBus = Entry(delbus)
             delBus.pack()
-            G.close()
             
-            def finalLocationdelete():
-                newLoc = Tk()
-                newLoc.title('Delete Location')
-                F = open("Bustypedata.csv", 'r+')
-                F1 = open("temp.csv", "w", newline='')
-                re = csv.reader(F)
-                wr = csv.writer(F1)
+            def finalBusTypedelete():
+                current_bus = delBus.get()
+                if db.execute_query("DELETE FROM bus_types WHERE name = %s", (current_bus,)):
+                    messagebox.showinfo("Deleted", "The deletion is successful")
+                    delbus.destroy()
+                    dell.destroy()
+                else:
+                    messagebox.showerror("Error", "Bus Type not found or deletion failed")
 
-                for x in re:
-                    if x[0] == delBus.get():
-                        def BusTypeBackendFinal():
-                            messagebox.showinfo("Deleted", "The deletion is successful")
-                            delbus.destroy()
-                            newLoc.destroy()
-                            dell.destroy()
-                            F.close()
-                            F1.close()
-                            os.remove("Bustypedata.csv")
-                            os.rename("temp.csv", "Bustypedata.csv")
-                        finalDel = Button(newLoc, text="Confirm Delete", command=BusTypeBackendFinal)
-                        finalDel.grid(row=2, column=1)
-                        continue
-                    else:
-                        wr.writerow(x)
-            dellocButton = Button(delbus, text="Delete", command=finalLocationdelete)
-            dellocButton.pack()
+            delbusButton = Button(delbus, text="Delete", command=finalBusTypedelete)
+            delbusButton.pack()
         dell = Tk()
         dell.title('Choose Deletion')
 
@@ -487,15 +450,19 @@ def SignInScreen():
             b = passwordconf_entry.get()
             
             if a == b:
-                F = open("userdata.csv", "a", newline='')
-                write = csv.writer(F)
-                L = [name_label_entry.get(), secondname_entry.get(), email_entry.get(), username_entry.get(), userpassword_entry.get()]
-                write.writerow(L)
-                MainBookingPage()
-                Tk.destroy()
+                if db.execute_query(
+                    "INSERT INTO users (firstname, lastname, email, username, password) VALUES (%s, %s, %s, %s, %s)",
+                    (name_label_entry.get(), secondname_entry.get(), email_entry.get(), username_entry.get(), userpassword_entry.get())
+                ):
+                    global w
+                    w = username_entry.get()
+                    messagebox.showinfo("Success", "Account created successfully")
+                    root.destroy()
+                    MainBookingPage()
+                else:
+                    messagebox.showerror("Error", "Registration failed. Username might already exist.")
             else:
-                print("nhk")
-                return
+                messagebox.showerror("Error", "Passwords do not match")
 
     sign_buttom = Button(root, text="Sign up", command=passwordchecker)
     sign_buttom.grid(row=6, column=1)
@@ -535,19 +502,16 @@ def FirstScreen():
         user_password_entry.grid(row=1, column=1)
 
         def LoginTrial():
-            F = open("userdata.csv", "r")
-            read = csv.reader(F)
             global w
             w = user_name.get()
-            global t
             t = user_password_entry.get()
-            for x in read:
-                if x[3] == w and x[4] == t:
-                    MainBookingPage()
-                    Tk.destroy()
-                    break
-                else:
-                    continue       
+            
+            user = db.fetch_one("SELECT * FROM users WHERE username = %s AND password = %s", (w, t))
+            if user:
+                root.destroy()
+                MainBookingPage()
+            else:
+                messagebox.showerror("Login Failed", "Invalid username or password")
 
         login_button = Button(root, text="Login", command=LoginTrial)
         login_button.grid(row=2, column=1)
