@@ -1,54 +1,71 @@
 # Velocity Bus Booking (VBB) Management System 🚌
 
-A comprehensive desktop application designed to streamline bus booking and fleet management. Developed using Python, this application utilizes `tkinter` for the graphical user interface and CSV handling for local, decentralized database management.
+A full-stack desktop application designed for efficient bus fleet management and passenger bookings. This system leverages a robust **MySQL Relational Database** to ensure high data integrity, secure user authentication, and real-time management of travel resources.
+
+---
 
 ## 🚀 Key Features
 
-*   **Customer Portal:** User authentication (sign-up/sign-in) and an intuitive booking interface.
-*   **Booking Engine:** Allows customers to select destinations, choose bus types based on varying prices, and calculate total fares based on passenger count.
-*   **Decentralized Storage:** Uses CSV files to maintain transparency and decentralization of records for users, locations, bus types, and bookings.
-*   **Admin Panel:** Protected admin gateway for management of the application.
-    *   **Manage Locations:** Add, edit, or delete travel destinations and their associated prices.
-    *   **Manage Fleet:** Add, modify, or remove available bus types and standard rates.
-*   **Receipts & Histories:** Customers can view past travel routes, bus types selected, and total fares paid.
+### 👤 Customer Experience
+*   **Secure Authentication:** Integrated Sign-up and Login systems for personalized access.
+*   **Booking Engine:** Real-time selection of destinations and bus types with automated fare calculation.
+*   **Travel History:** Instant access to digital receipts and detailed logs of all previous bookings.
+
+### 🛠️ Administrative Control
+*   **Fleet Management:** Add, modify, or retire bus types and adjust pricing models instantly.
+*   **Location Management:** Dynamic CRUD (Create, Read, Update, Delete) operations for travel routes and destinations.
+*   **Financial Tracking:** Centralized oversight of total revenue and passenger distributions.
+
+---
 
 ## 🛠️ Technology Stack
 
 *   **Programming Language:** Python 3.x
-*   **GUI Framework:** Tkinter
-*   **Database:** MySQL (Relational Database Management System)
-*   **External Dependencies:** `mysql-connector-python`
+*   **GUI Library:** Tkinter
+*   **Database:** MySQL Server
+*   **Database Connector:** `mysql-connector-python`
 
-## 🗂️ Repository Structure
+---
 
-*   `main.py`: The core application file containing the GUI logic and application flow.
-*   `database.py`: Centralized MySQL database handler and initialization logic.
-*   `trial.png`: Background UI image resource.
+## 🗂️ Core Architecture
 
-## ⚙️ How to Run Locally
+*   `main.py`: Drives the primary application logic and user interface design.
+*   `database.py`: A modular database handler that manages all SQL transactions, schema initialization, and data persistence.
+*   `trial.png`: UI asset for an enhanced visual experience.
 
-Since this program uses only built-in standard Python libraries, there are no extra packages to download.
+---
 
-1.  **Clone the repository.**
-2.  **Environment Setup:**
-    *   Install the MySQL connector:
-        ```bash
-        pip install mysql-connector-python
-        ```
-    *   Ensure a MySQL server is running (e.g., MySQL Community Server or via XAMPP).
-3.  **Database Configuration:**
-    *   Edit `database.py` with your MySQL credentials (host, user, password).
-4.  **Migration & Setup:**
-    *   Run the migration script to create the database and transfer data from CSV:
-        ```bash
-        python migrate_to_sql.py
-        ```
-5.  **Run the application:**
-    ```bash
-    python main.py
-    ```
-    
-## 🔑 Default Admin Credentials
-To test the admin panel features (route addition, fleet modification, etc.):
-*   **Admin Access Code:** `Hem@ng&cyph3r` 
-*(Note: Change this hardcoded password in production scenarios)*
+## ⚙️ Local Development Setup
+
+### 1. Database Initialization
+Ensure you have a MySQL server running locally. Create the database schema by executing the scripts included in the repository.
+
+### 2. Environment Configuration
+Update the connection string in `database.py` to match your local credentials:
+```python
+# database.py
+self.host = "localhost"
+self.user = "root"
+self.password = "YOUR_MYSQL_PASSWORD"
+```
+
+### 3. Installation
+Install the required Python driver:
+```bash
+pip install mysql-connector-python
+```
+
+### 4. Launching the Application
+Execute the main entry point to start the management system:
+```bash
+python main.py
+```
+
+---
+
+## 🔑 Admin Gateway
+The Administrative Panel is restricted and requires a dedicated access key.
+*   **Default Admin Access Code:** `Hem@ng&cyph3r`
+
+---
+*Developed with ❤️ by [Hemang Vats](https://github.com/hemangvats)*
